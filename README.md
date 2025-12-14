@@ -80,6 +80,23 @@ bzt-app-training-scheduler/
 
 Run the database initialization scripts:
 
+#### Automated (Recommended)
+
+```bash
+# Run all migrations with tracking
+npm run migrate
+
+# Or use the deployment script
+sudo ./scripts/deploy.sh
+```
+
+The migration runner automatically:
+- Tracks executed migrations
+- Prevents duplicate execution
+- Provides clear error messages
+
+#### Manual
+
 ```bash
 # Create tables
 mysql -u root -p bzt_main_db < migrations/db-init-training-scheduler.sql

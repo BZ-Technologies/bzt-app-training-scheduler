@@ -47,6 +47,27 @@ NODE_ENV=production
 
 ### 4. Run Database Migrations
 
+#### Option A: Automated Migration Runner (Recommended)
+
+```bash
+# Run all migrations
+npm run migrate
+
+# Dry run (see what would be executed)
+npm run migrate:dry-run
+
+# Force re-run migrations (if needed)
+npm run migrate:force
+```
+
+The migration runner:
+- Tracks which migrations have been executed
+- Prevents duplicate execution
+- Provides clear error messages
+- Can be run multiple times safely
+
+#### Option B: Manual MySQL Execution
+
 ```bash
 # Create application tables
 mysql -u root -p bzt_main_db < migrations/db-init-training-scheduler.sql
@@ -54,6 +75,18 @@ mysql -u root -p bzt_main_db < migrations/db-init-training-scheduler.sql
 # Add to applications catalog
 mysql -u root -p bzt_main_db < migrations/db-add-training-scheduler-app.sql
 ```
+
+#### Option C: Full Automated Deployment
+
+```bash
+# Run the complete deployment script
+sudo ./scripts/deploy.sh
+```
+
+This script handles:
+- Dependency installation
+- Database migrations
+- Integration checks
 
 ### 5. Integrate with Portal
 
