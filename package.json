@@ -1,0 +1,25 @@
+{
+  "name": "bzt-app-training-scheduler",
+  "version": "1.0.0",
+  "description": "Comprehensive class and training session scheduling system with student registration, payment processing, and instructor management",
+  "main": "src/workers/TrainingSchedulerWorker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "worker": "node src/workers/TrainingSchedulerWorker.js"
+  },
+  "keywords": [
+    "training-scheduler",
+    "bzt",
+    "application"
+  ],
+  "author": "BZ Technologies",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "mariadb": "^3.2.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
