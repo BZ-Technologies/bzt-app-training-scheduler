@@ -47,7 +47,29 @@ NODE_ENV=production
 
 ### 4. Run Database Migrations
 
-#### Option A: Automated Migration Runner (Recommended)
+#### Option A: Centralized Deployment Server (Production - Recommended)
+
+Migrations should be run from `bzt-app-01` deployment server:
+
+```bash
+# On bzt-app-01 server
+sudo /opt/bzt-deploy/deploy-app-migrations.sh training-scheduler
+
+# Dry run (preview)
+sudo /opt/bzt-deploy/deploy-app-migrations.sh training-scheduler --dry-run
+```
+
+**Benefits:**
+- Centralized database access
+- Secure credential management
+- Consistent deployment process
+- Migration history tracking
+
+See `bzt-architecture/infrastructure/DEPLOYMENT-SERVER-SETUP.md` for setup instructions.
+
+#### Option B: Local Development (Development Only)
+
+For local development environments:
 
 ```bash
 # Run all migrations
@@ -60,13 +82,7 @@ npm run migrate:dry-run
 npm run migrate:force
 ```
 
-The migration runner:
-- Tracks which migrations have been executed
-- Prevents duplicate execution
-- Provides clear error messages
-- Can be run multiple times safely
-
-#### Option B: Manual MySQL Execution
+#### Option C: Manual MySQL Execution
 
 ```bash
 # Create application tables
@@ -75,18 +91,6 @@ mysql -u root -p bzt_main_db < migrations/db-init-training-scheduler.sql
 # Add to applications catalog
 mysql -u root -p bzt_main_db < migrations/db-add-training-scheduler-app.sql
 ```
-
-#### Option C: Full Automated Deployment
-
-```bash
-# Run the complete deployment script
-sudo ./scripts/deploy.sh
-```
-
-This script handles:
-- Dependency installation
-- Database migrations
-- Integration checks
 
 ### 5. Integrate with Portal
 
