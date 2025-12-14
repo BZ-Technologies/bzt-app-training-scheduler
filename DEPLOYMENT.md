@@ -65,7 +65,7 @@ sudo /opt/bzt-deploy/deploy-app-migrations.sh training-scheduler --dry-run
 - Consistent deployment process
 - Migration history tracking
 
-See `bzt-architecture/infrastructure/DEPLOYMENT-SERVER-SETUP.md` for setup instructions.
+See `bzt-portal/scripts/DEPLOYMENT-SERVER-SETUP.md` for setup instructions.
 
 #### Option B: Local Development (Development Only)
 
