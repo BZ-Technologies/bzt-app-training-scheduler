@@ -1,0 +1,119 @@
+# .cursorrules - BZ Technologies (Node.js/TypeScript)
+#
+# 📋 This file is a distributed copy of the master coding standards.
+# 📖 Master Copy: bzt-architecture/cursorrules.md
+# 🔄 To update: Run bzt-architecture/scripts/sync-cursorrules.sh
+# 📅 Last Synced: 2025-12-15
+#
+# --------------------------------------------------------------------------------
+
+
+**📋 Master Copy**: This is the authoritative version of the BZ Technologies coding standards.  
+**🔄 Distribution**: This file should be copied to `.cursorrules` in the root of each repository.  
+**🛠️ Sync Tool**: Use `bzt-architecture/scripts/sync-cursorrules.sh` to distribute updates.  
+**📅 Last Updated**: 2024-12-14
+
+# --------------------------------------------------------------------------------
+# 💰 RESOURCE & SCOPE GUARD (Pro+ Credit Protection)
+# --------------------------------------------------------------------------------
+# GOAL: Prevent accidental "token burning" on massive, ill-defined requests.
+When analyzing a request:
+1. **Estimate Scope:** Does this change affect > 5 files or require reading > 500 lines of active context?
+2. **Warning Trigger:** If YES, you must preface your response with:
+   "⚠️ **HIGH LOAD WARNING:** This operation has a large scope (approx. [X] files). Ensure 'Max Mode' is enabled and you have sufficient credits."
+3. **Refusal to "YOLO":** Do not attempt to refactor the entire codebase in one turn. If the request is too broad (e.g., "Refactor all error handling"), propose a plan to tackle one module at a time.
+
+# --------------------------------------------------------------------------------
+# 🧠 GEMINI 3.0 HIGH-REASONING ENFORCER
+# --------------------------------------------------------------------------------
+When using gemini-3.0-pro or gemini-3.0-pro-preview:
+1. **ALWAYS** engage "Deep Think" mode.
+2. **MANDATORY:** Before generating code, output a <thinking> block to evaluate:
+   * **Scope:** (As per Resource Guard above).
+   * **Type Safety:** (Can we use strict interfaces instead of any?).
+   * **Observability:** (Are we logging errors with context?).
+3. Critique your own plan against the "BZ Design Pillars" below.
+
+# --------------------------------------------------------------------------------
+# 🏛️ BZ DESIGN PILLARS (Ops & Support Focus)
+# --------------------------------------------------------------------------------
+
+# PILLAR 1: STRICT TYPESCRIPT & SAFETY
+# We pay the tax upfront (types) to avoid debt later (runtime bugs).
+- **NO `any` types.** Use `unknown` if unsure, then validate with type guards or Zod.
+- Explicitly define return types for ALL functions.
+- Prefer `interface` over `type` for object definitions (better error messages).
+- Use Optional Chaining (`?.`) and Nullish Coalescing (`??`) over verbose checks.
+
+# TENANT IDENTIFICATION RULE
+# Critical distinction for multi-tenant architecture.
+- **tenant_id**: Database ID (integer) - Use for ALL internal code, database queries, and service operations.
+  - Example: `WHERE tenant_id = ?` in SQL queries
+  - Example: `getTenantId()` returns tenant_id (integer)
+  - NEVER use tenant_code in database operations
+- **tenant_code**: Human-readable identifier (string, e.g., "ACME001") - Use ONLY for GUI displays and user-facing messages.
+  - Example: Display "Tenant: ACME001" in UI
+  - Example: `getTenantCode()` returns tenant_code (string)
+  - NEVER use tenant_code in database WHERE clauses or internal logic
+- **JWT Token Note**: JWT field named "tenantId" actually contains tenant_code (for security). Middleware converts it to tenant_id for internal use.
+
+# PILLAR 2: NODE.JS STABILITY & ASYNC
+# Operations Priority: Do not crash the process.
+- **Async/Await Only:** No callbacks. Use `util.promisify` if dealing with legacy libs.
+- **Global Error Handling:** All HTTP routes must pass errors to a `next()` handler or central middleware.
+- **Event Loop Protection:** Avoid heavy computation in the main thread; suggest worker threads if O(n) is high.
+
+# PILLAR 3: LOGGING
+# If it isn't logged, it didn't happen.
+- Use structured logging (e.g., Winston/Pino). `console.log` is FORBIDDEN in production code.
+- Log levels matter:
+  - `error`: Action required immediately.
+  - `warn`: Something odd happened, but we recovered.
+  - `info`: Key business events (e.g., "OrderPlaced").
+  - `debug`: Detailed developer info for troubleshooting.
+- **Handled Exceptions:** Must include a human-readable comment/message explaining the error context.
+- **Unhandled Exceptions:** Must explicitly state "UNHANDLED EXCEPTION" in the message and include the full stack trace in the metadata.
+- All errors must include context: `logger.error('Failed to save user', { userId, error })`.
+
+# PILLAR 4: OBSERVABILITY (Telemetry)
+# Measure what matters.
+- **Instrumentation:** Prepare code for integration with APM tools (DataDog, New Relic, OpenTelemetry).
+- **Context Propagation:** Ensure trace IDs are passed between services and modules.
+- **Metrics:** Track key performance indicators (latency, error rates, throughput).
+
+# PILLAR 5: SECURITY & VALIDATION
+# Trust nothing. Verify everything.
+- **Input Validation:** All external inputs (API body, query params) must be validated (e.g., using Zod) before use.
+- **Sanitization:** Sanitize all outputs to prevent XSS (Cross-Site Scripting).
+- **Authentication:** Ensure endpoints are protected by appropriate middleware (e.g., `tenantMiddleware`).
+
+# PILLAR 6: TESTING & AUTOMATION
+# Verify behavior before deploying.
+- **Unit Tests:** Business logic changes must include corresponding unit tests (e.g., Jest/Vitest).
+- **Regression Testing:** Automated suites must run on every build to prevent re-occurrence of known bugs.
+- **Automation:** Design tests to be automated within CI/CD pipelines.
+- **E2E Testing:** Prefer automated E2E testing tools (e.g., Playwright, Selenium, Cypress) for critical user flows.
+
+# PILLAR 7: DEPLOYMENT & IMMUTABILITY
+# Treat servers as cattle, not pets.
+- **Statelessness:** Application code must not store state locally (use Redis/DB). Local disks are ephemeral.
+- **Config Separation:** Configuration lives in the Database (tenants/settings) or Environment Variables, NEVER in code.
+- **Blue/Green Ready:** Design for zero-downtime swaps. Old containers die; new ones replace them.
+
+# --------------------------------------------------------------------------------
+# 🐙 GITHUB & CODE MANAGEMENT STANDARDS
+# --------------------------------------------------------------------------------
+- **Modular Code:** Files should rarely exceed 200 lines with some flexibility for overage if the file isn't more than 50% over the limit. Break them down in a reasonable way.
+- **Frontend Guidelines:**
+  - Prefer React functional components.
+  - Use Tailwind CSS utility classes over custom styles.
+  - Use Server Components by default; only use "use client" when interactivity is required.
+- **JSDoc/TSDoc:** All public methods must have comments explaining params and side effects.
+- **Conventional Commits:** When suggesting commit messages, use the format: `feat(auth): add JWT validation`.
+
+# --------------------------------------------------------------------------------
+# 🚫 NEGATIVE CONSTRAINTS (The "Don't" List)
+# --------------------------------------------------------------------------------
+- DO NOT ignore TS compiler errors with `@ts-ignore`. Fix the root cause.
+- DO NOT hardcode environment variables (use `process.env`).
+- DO NOT leave "dead code" or commented-out blocks.
