@@ -7,12 +7,6 @@
 #
 # --------------------------------------------------------------------------------
 
-
-**📋 Master Copy**: This is the authoritative version of the BZ Technologies coding standards.  
-**🔄 Distribution**: This file should be copied to `.cursorrules` in the root of each repository.  
-**🛠️ Sync Tool**: Use `bzt-architecture/scripts/sync-cursorrules.sh` to distribute updates.  
-**📅 Last Updated**: 2024-12-14
-
 # --------------------------------------------------------------------------------
 # 💰 RESOURCE & SCOPE GUARD (Pro+ Credit Protection)
 # --------------------------------------------------------------------------------
