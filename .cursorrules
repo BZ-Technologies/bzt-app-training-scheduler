@@ -3,7 +3,7 @@
 # 📋 This file is a distributed copy of the master coding standards.
 # 📖 Master Copy: bzt-architecture/cursorrules.md
 # 🔄 To update: Run bzt-architecture/scripts/sync-cursorrules.sh
-# 📅 Last Synced: 2025-12-15
+# 📅 Last Synced: 2025-12-17
 #
 # --------------------------------------------------------------------------------
 
@@ -81,6 +81,37 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 - **Sanitization:** Sanitize all outputs to prevent XSS (Cross-Site Scripting).
 - **Authentication:** Ensure endpoints are protected by appropriate middleware (e.g., `tenantMiddleware`).
 
+# PILLAR 5A: HASHICORP VAULT - SECRET MANAGEMENT
+# ALL secrets MUST be stored in HashiCorp Vault. NEVER hardcode secrets in code or environment files.
+- **Vault Server**: `bzt-mgmt-01` (192.168.180.200:8200)
+- **Vault Path Format**: Use logical paths (e.g., `secret/twilio/prod`, `secret/infrastructure/network/mikrotik-router`)
+- **What Goes in Vault**: ALL secrets including:
+  - API keys (Twilio, OpenAI, Google, etc.)
+  - API secrets and auth tokens
+  - SSH private keys (for automation accounts)
+  - SSL/TLS certificates and private keys
+  - Database passwords
+  - Third-party service credentials
+  - Webhook secrets and signing keys
+- **Code Pattern**: Always retrieve secrets from Vault at runtime, never store in code:
+  ```javascript
+  // ✅ CORRECT: Retrieve from Vault
+  const vault = require('node-vault')({ endpoint: process.env.VAULT_ADDR });
+  await vault.userpassLogin({ username, password });
+  const secret = await vault.read('secret/twilio/prod');
+  const apiKey = secret.data.data.api_key;
+  
+  // ❌ WRONG: Hardcoded or in .env file
+  const apiKey = 'SK1234567890'; // NEVER DO THIS
+  ```
+- **Environment Variables**: Only use `process.env` for:
+  - Vault connection details (`VAULT_ADDR`, `VAULT_USER`, `VAULT_PASSWORD`)
+  - Non-sensitive configuration (e.g., `NODE_ENV`, `PORT`, `LOG_LEVEL`)
+- **Service Accounts**: Use `bzt-infra-automation` account for automated Vault access (stored in Vault).
+- **Error Handling**: If Vault is unavailable, fail gracefully with clear error messages. Never fall back to hardcoded secrets.
+- **Testing**: In test environments, use Vault test paths (e.g., `secret/twilio/test`) or mock Vault responses.
+- **Documentation**: Document all Vault paths in `bzt-architecture/infrastructure/security/VAULT-QUICK-REFERENCE.md`.
+
 # PILLAR 6: TESTING & AUTOMATION
 # Verify behavior before deploying.
 - **Unit Tests:** Business logic changes must include corresponding unit tests (e.g., Jest/Vitest).
@@ -109,5 +140,7 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 # 🚫 NEGATIVE CONSTRAINTS (The "Don't" List)
 # --------------------------------------------------------------------------------
 - DO NOT ignore TS compiler errors with `@ts-ignore`. Fix the root cause.
-- DO NOT hardcode environment variables (use `process.env`).
+- DO NOT hardcode environment variables (use `process.env` for non-sensitive config only).
+- DO NOT hardcode secrets, API keys, passwords, or SSH keys in code or `.env` files. Use HashiCorp Vault.
+- DO NOT commit secrets to git (even in `.env.example` - use placeholders like `VAULT_PATH: secret/service/api_key`).
 - DO NOT leave "dead code" or commented-out blocks.
