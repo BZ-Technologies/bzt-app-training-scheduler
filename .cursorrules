@@ -18,7 +18,7 @@ When analyzing a request:
 3. **Refusal to "YOLO":** Do not attempt to refactor the entire codebase in one turn. If the request is too broad (e.g., "Refactor all error handling"), propose a plan to tackle one module at a time.
 
 # --------------------------------------------------------------------------------
-# 🧠 GEMINI 3.0 HIGH-REASONING ENFORCER
+# 🧠 GEMINI 3.0 Pro HIGH-REASONING ENFORCER
 # --------------------------------------------------------------------------------
 When using gemini-3.0-pro or gemini-3.0-pro-preview:
 1. **ALWAYS** engage "Deep Think" mode.
