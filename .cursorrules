@@ -1,11 +1,47 @@
 # .cursorrules - BZ Technologies (Node.js/TypeScript)
 #
 # 📋 This file is a distributed copy of the master coding standards.
-# 📖 Master Copy: bzt-architecture/cursorrules.md
-# 🔄 To update: Run bzt-architecture/scripts/sync-cursorrules.sh
-# 📅 Last Synced: 2025-12-17
+# 📖 Master Copy: /home/dkentjordan/bztech/code/.cursorrules (workspace root)
+# 🔄 To update: 
+#    1. Edit the master file: /home/dkentjordan/bztech/code/.cursorrules
+#    2. Run: bzt-architecture/standards/sync-cursorrules.sh
+# 📅 Last Synced: 2025-12-21 22:50:35 CST
 #
 # --------------------------------------------------------------------------------
+
+#
+# 📅 Last Updated: 2025-12-22 05:30:00 CST
+# ⚠️ Remember to update this timestamp when making changes!
+#
+# --------------------------------------------------------------------------------
+# 🤖 AI ASSISTANT ACCESS REFERENCE
+# --------------------------------------------------------------------------------
+# When accessing systems, network devices, or Vault, ALWAYS reference:
+# - /home/dkentjordan/bztech/code/bzt-architecture/infrastructure/security/AI-ACCESS-REFERENCE.md
+# 
+# This document contains:
+# - Vault access patterns (address, login, credentials location)
+# - SSH access methods for all servers
+# - Database access procedures and credentials
+# - Network device access (MikroTik)
+# - Common workflows and troubleshooting
+# - Quick reference commands
+#
+# Before attempting to SSH, access Vault, or connect to databases, check this reference first.
+
+# --------------------------------------------------------------------------------
+# 🔐 SERVER ACCESS CREDENTIALS - CRITICAL
+# --------------------------------------------------------------------------------
+# IMPORTANT: The account "dkentjordan" does NOT exist on BZ Technologies servers.
+# 
+# Correct accounts for server access:
+# - **bzadmin** - Interactive login account (then use `su -` to become root)
+# - **bzt-infra-automation** - Automation account with SSH keys (stored in Vault)
+#
+# SSH Key Location: Vault at `secret/infrastructure/automation/bzt-infra-automation-{server}`
+# Example: `vault kv get -field=ssh_private_key secret/infrastructure/automation/bzt-infra-automation-bzt-tst-01`
+#
+# NEVER use "dkentjordan" as a username for server access - it does not exist.
 
 # --------------------------------------------------------------------------------
 # 💰 RESOURCE & SCOPE GUARD (Pro+ Credit Protection)
@@ -18,7 +54,7 @@ When analyzing a request:
 3. **Refusal to "YOLO":** Do not attempt to refactor the entire codebase in one turn. If the request is too broad (e.g., "Refactor all error handling"), propose a plan to tackle one module at a time.
 
 # --------------------------------------------------------------------------------
-# 🧠 GEMINI 3.0 Pro HIGH-REASONING ENFORCER
+# 🧠 GEMINI 3.0 HIGH-REASONING ENFORCER
 # --------------------------------------------------------------------------------
 When using gemini-3.0-pro or gemini-3.0-pro-preview:
 1. **ALWAYS** engage "Deep Think" mode.
@@ -42,14 +78,37 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 # TENANT IDENTIFICATION RULE
 # Critical distinction for multi-tenant architecture.
 - **tenant_id**: Database ID (integer) - Use for ALL internal code, database queries, and service operations.
-  - Example: `WHERE tenant_id = ?` in SQL queries
-  - Example: `getTenantId()` returns tenant_id (integer)
-  - NEVER use tenant_code in database operations
+ - Example: `WHERE tenant_id = ?` in SQL queries
+ - Example: `getTenantId()` returns tenant_id (integer)
+ - NEVER use tenant_code in database operations
 - **tenant_code**: Human-readable identifier (string, e.g., "ACME001") - Use ONLY for GUI displays and user-facing messages.
-  - Example: Display "Tenant: ACME001" in UI
-  - Example: `getTenantCode()` returns tenant_code (string)
-  - NEVER use tenant_code in database WHERE clauses or internal logic
+ - Example: Display "Customer: ACME001" in UI (see UI TERMINOLOGY RULE below)
+ - Example: `getTenantCode()` returns tenant_code (string)
+ - NEVER use tenant_code in database WHERE clauses or internal logic
 - **JWT Token Note**: JWT field named "tenantId" actually contains tenant_code (for security). Middleware converts it to tenant_id for internal use.
+
+# UI TERMINOLOGY RULE
+# User-facing text must use "Customer" or "Client", not "Tenant".
+- **Internal/Code**: Use "tenant" terminology in all code, variable names, function names, database fields, API endpoints, logs, comments, and internal documentation.
+ - ✅ Correct: `tenantId`, `getTenantId()`, `tenant_settings` table, `/api/admin/tenants`
+ - ✅ Correct: Log messages: "Error loading tenant", "Tenant not found"
+- **UI/User-Facing**: Use "Customer" (or occasionally "Client") in ALL user-visible text:
+ - ✅ Correct: Page titles: "Customer Management", "Edit Customer"
+ - ✅ Correct: Labels: "Customer Code", "Customer ID", "Back to Customers"
+ - ✅ Correct: Messages: "Customer not found", "Failed to load customer"
+ - ✅ Correct: Table headers: "Customer", "Customer Name"
+ - ❌ Wrong: "Tenant Management", "Tenant Code", "Back to Tenants" (in UI)
+- **Admin vs Customer Portal**: 
+ - Admin portal (internal BZ staff): Can use "Customer" or "Tenant" interchangeably, but prefer "Customer" for consistency
+ - Customer portal (end users): MUST use "Customer" or "Client", never "Tenant"
+
+# PROXMOX TEMPLATE DEPLOYMENT REMINDER
+# When deploying new servers from bzt-deb12-template:
+# 1. Template is on VLAN 20 (192.168.20.11) - MUST change to target VLAN/subnet
+# 2. ALWAYS create firewall rules for new BZT infrastructure servers
+# 3. Firewall rules MUST be inserted BEFORE rule 58 (rule 59 is start of drop rules)
+# 4. Each server needs unique SSH keys (regenerate host keys and automation account key)
+# 5. See: bzt-architecture/infrastructure/scripts/DEPLOY-NEW-SERVER-FROM-TEMPLATE.md for complete guide
 
 # PILLAR 2: NODE.JS STABILITY & ASYNC
 # Operations Priority: Do not crash the process.
@@ -81,37 +140,6 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 - **Sanitization:** Sanitize all outputs to prevent XSS (Cross-Site Scripting).
 - **Authentication:** Ensure endpoints are protected by appropriate middleware (e.g., `tenantMiddleware`).
 
-# PILLAR 5A: HASHICORP VAULT - SECRET MANAGEMENT
-# ALL secrets MUST be stored in HashiCorp Vault. NEVER hardcode secrets in code or environment files.
-- **Vault Server**: `bzt-mgmt-01` (192.168.180.200:8200)
-- **Vault Path Format**: Use logical paths (e.g., `secret/twilio/prod`, `secret/infrastructure/network/mikrotik-router`)
-- **What Goes in Vault**: ALL secrets including:
-  - API keys (Twilio, OpenAI, Google, etc.)
-  - API secrets and auth tokens
-  - SSH private keys (for automation accounts)
-  - SSL/TLS certificates and private keys
-  - Database passwords
-  - Third-party service credentials
-  - Webhook secrets and signing keys
-- **Code Pattern**: Always retrieve secrets from Vault at runtime, never store in code:
-  ```javascript
-  // ✅ CORRECT: Retrieve from Vault
-  const vault = require('node-vault')({ endpoint: process.env.VAULT_ADDR });
-  await vault.userpassLogin({ username, password });
-  const secret = await vault.read('secret/twilio/prod');
-  const apiKey = secret.data.data.api_key;
-  
-  // ❌ WRONG: Hardcoded or in .env file
-  const apiKey = 'SK1234567890'; // NEVER DO THIS
-  ```
-- **Environment Variables**: Only use `process.env` for:
-  - Vault connection details (`VAULT_ADDR`, `VAULT_USER`, `VAULT_PASSWORD`)
-  - Non-sensitive configuration (e.g., `NODE_ENV`, `PORT`, `LOG_LEVEL`)
-- **Service Accounts**: Use `bzt-infra-automation` account for automated Vault access (stored in Vault).
-- **Error Handling**: If Vault is unavailable, fail gracefully with clear error messages. Never fall back to hardcoded secrets.
-- **Testing**: In test environments, use Vault test paths (e.g., `secret/twilio/test`) or mock Vault responses.
-- **Documentation**: Document all Vault paths in `bzt-architecture/infrastructure/security/VAULT-QUICK-REFERENCE.md`.
-
 # PILLAR 6: TESTING & AUTOMATION
 # Verify behavior before deploying.
 - **Unit Tests:** Business logic changes must include corresponding unit tests (e.g., Jest/Vitest).
@@ -125,6 +153,27 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 - **Config Separation:** Configuration lives in the Database (tenants/settings) or Environment Variables, NEVER in code.
 - **Blue/Green Ready:** Design for zero-downtime swaps. Old containers die; new ones replace them.
 
+# PILLAR 8: BZ DESIGN SYSTEM & UI STANDARDS
+# AI must enforce these visual standards in all frontend code.
+# 1. COLOR PALETTE (Strict Enforcement)
+# Always use these specific Tailwind classes or Hex codes.
+- Primary (Navy):   `bg-bzt-navy`  / #00205B (Headers, Footers, Primary Text)
+- Accent (Gold):    `text-bzt-gold` / #EAAA00 (Highlight icons, active states)
+- Buttons:          `bg-bzt-gold` text-`bzt-navy` hover:bg-white (High Contrast)
+- Backgrounds:      `bg-slate-50` (App/Body background), `bg-white` (Cards/Panels)
+# 2. COMPONENT RULES
+- Navbar: Must be `bg-bzt-navy` with White text. Links hover to Gold.
+- Footer: Must be `bg-bzt-navy` with White text.
+- Cards: White background, rounded-lg, shadow-md, p-6.
+- Headings: Navy color (#00205B), Font-Bold.
+# 3. ICONOGRAPHY
+- Library: FontAwesome 6 (via CDN).
+- Usage: `<i className="fa-solid fa-{icon-name}"></i>`
+- Styling: Icons often use `text-bzt-gold` for visual pop.
+# 4. LAYOUT & SPACING
+- Container: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` (Standard wrapper)
+- Grid: Use CSS Grid for dashboards (`grid-cols-1 md:grid-cols-3 gap-6`)
+
 # --------------------------------------------------------------------------------
 # 🐙 GITHUB & CODE MANAGEMENT STANDARDS
 # --------------------------------------------------------------------------------
@@ -137,10 +186,49 @@ When using gemini-3.0-pro or gemini-3.0-pro-preview:
 - **Conventional Commits:** When suggesting commit messages, use the format: `feat(auth): add JWT validation`.
 
 # --------------------------------------------------------------------------------
+# 📄 DOCUMENTATION & REPORT STANDARDS
+# --------------------------------------------------------------------------------
+- **Timestamps Required:** ALL markdown reports, status documents, and documentation files MUST include timestamps.
+  - **Format**: `YYYY-MM-DD HH:MM:SS TZ` (e.g., `2025-12-21 08:01:00 CST`)
+  - **Required Fields**: 
+    - `**Generated**: <timestamp>` - When the document was first created
+    - `**Last Updated**: <timestamp>` - When the document was last modified
+  - **Location**: 
+    - Header: Include immediately after the title/status line
+    - Footer: Include at the end of the document before the final separator
+  - **Examples**:
+    ```markdown
+    # Report Title
+    
+    **Generated**: 2025-12-21 08:01:00 CST  
+    **Last Updated**: 2025-12-21 08:01:00 CST  
+    **Status**: ✅ Complete
+    
+    ... content ...
+    
+    ---
+    
+    **Report Generated**: 2025-12-21 08:01:00 CST  
+    **Last Updated**: 2025-12-21 08:01:00 CST
+    ```
+  - **When to Update**: Always update `Last Updated` timestamp whenever modifying the document content.
+
+# --------------------------------------------------------------------------------
+# 🌐 NETWORK & SERVER ACCESS RULES
+# --------------------------------------------------------------------------------
+# CRITICAL: Always use FQDNs (Fully Qualified Domain Names) for server connections.
+# The infrastructure uses MikroTik DNS server - short hostnames will not resolve.
+# 
+# ✅ CORRECT: `bzt-tst-01.bztech.org`, `bz-vm-01.bztech.org`, `bzt-mon-01.bztech.org`
+# ❌ WRONG: `bzt-tst-01`, `bz-vm-01`, `bzt-mon-01` (will fail to resolve)
+#
+# All servers must be accessed using the format: `<hostname>.bztech.org`
+# IP addresses should only be used as fallback when DNS is unavailable.
+
+# --------------------------------------------------------------------------------
 # 🚫 NEGATIVE CONSTRAINTS (The "Don't" List)
 # --------------------------------------------------------------------------------
 - DO NOT ignore TS compiler errors with `@ts-ignore`. Fix the root cause.
-- DO NOT hardcode environment variables (use `process.env` for non-sensitive config only).
-- DO NOT hardcode secrets, API keys, passwords, or SSH keys in code or `.env` files. Use HashiCorp Vault.
-- DO NOT commit secrets to git (even in `.env.example` - use placeholders like `VAULT_PATH: secret/service/api_key`).
+- DO NOT hardcode environment variables (use `process.env`).
 - DO NOT leave "dead code" or commented-out blocks.
+- DO NOT use short hostnames for server access - always use FQDNs (`server.bztech.org`).
